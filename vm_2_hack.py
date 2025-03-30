@@ -1,3 +1,5 @@
+# call with "python vm_2_hack.py <filename>.vm"
+
 import sys
 
 def parser(file_path):
@@ -63,7 +65,7 @@ def code_writer(lines, filename):
         "pointer": "@3\nD=D+A",
     }
 
-    part3_label = -1
+    j_counter = -1
 
     for i in lines:
         words = i.split()
@@ -96,8 +98,8 @@ def code_writer(lines, filename):
             asm_file.write(f"// {words[0]}\n@SP\nA=M-1\n{neg[words[0]]}\n")
 
         elif words[0] in j:
-            part3_label += 1
-            asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nA=M-1\nD=M-D\nM=-1\n@{words[0]}_True{part3_label}\n{j[words[0]]}\n@SP\nA=M-1\nM=0\n({words[0]}_True{part3_label})\n\n")
+            j_counter += 1
+            asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nA=M-1\nD=M-D\nM=-1\n@{words[0]}_True{j_counter}\n{j[words[0]]}\n@SP\nA=M-1\nM=0\n({words[0]}_True{j_counter})\n\n")
     
     asm_file.close()
 
