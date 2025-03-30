@@ -45,13 +45,22 @@ def code_writer(lines, filename):
         "lt": "D;JLT",
     }
 
-    statements = {
-        "this": "@THIS",
-        "that": "@THAT",
-        "argument": "@ARG",
-        "local": "@LCL",
-        "temp": "@5",
-        "pointer": "@3",
+    push_statements = {
+        "this": "@THIS\nA=D+M",
+        "that": "@THAT\nA=D+M",
+        "argument": "@ARG\nA=D+M",
+        "local": "@LCL\nA=D+M",
+        "temp": "@5\nA=D+A",
+        "pointer": "@3\nA=D+A",
+    }
+
+    pop_statements = {
+        "this": "@THIS\nD=D+M",
+        "that": "@THAT\nD=D+M",
+        "argument": "@ARG\nD=D+M",
+        "local": "@LCL\nD=D+M",
+        "temp": "@5\nD=D+A",
+        "pointer": "@3\nD=D+A",
     }
 
     part3_label = -1
@@ -66,12 +75,16 @@ def code_writer(lines, filename):
                 elif words[1] == "constant":
                     asm_file.write(f"@{words[2]}\nD=A\n")
                 asm_file.write("@SP\nA=M\nM=D\n@SP\nM=M+1\n\n")
-        if words[0] == "pop":
+            elif words[1] in push_statements:
+                asm_file.write(f"@{words[2]}\nD=A\n{push_statements[words[1]]}\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+
+        elif words[0] == "pop":
             asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n")
             if words[1] == "static":
                 asm_file.write(f"@SP\nAM=M-1\nD=M\n@Static_{words[2]}\nM=D\n\n")
+            elif words[1] in pop_statements:
+                asm_file.write(f"@{words[2]}\nD=A\n{pop_statements[words[1]]}\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n")
             
-
 
         elif words[0] in sum:
             asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nAM=M-1\n{sum[words[0]]}\n@SP\nM=M+1\n\n")
