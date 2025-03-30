@@ -45,13 +45,13 @@ def code_writer(lines, filename):
         "lt": "D;JLT",
     }
 
-    parts5 = {
-        "this": "@THIS\n",
-        "that": "@THAT\n",
-        "argument": "@ARG\n",
-        "local": "@LCL\n",
-        "temp": "@5\n",
-        "pointer": "@3\n",
+    statements = {
+        "this": "@THIS",
+        "that": "@THAT",
+        "argument": "@ARG",
+        "local": "@LCL",
+        "temp": "@5",
+        "pointer": "@3",
     }
 
     part3_label = -1
@@ -59,8 +59,19 @@ def code_writer(lines, filename):
     for i in lines:
         words = i.split()
         if words[0] == "push":
-            if words[1] == "constant":
-                asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n@{words[2]}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n\n")
+            asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n")
+            if words[1] == "static" or words[1] == "constant":
+                if words[1] == "static":
+                        asm_file.write(f"@Static_{words[2]}\nD=M\n")
+                elif words[1] == "constant":
+                    asm_file.write(f"@{words[2]}\nD=A\n")
+                asm_file.write("@SP\nA=M\nM=D\n@SP\nM=M+1\n\n")
+        if words[0] == "pop":
+            asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n")
+            if words[1] == "static":
+                asm_file.write(f"@SP\nAM=M-1\nD=M\n@Static_{words[2]}\nM=D\n\n")
+            
+
 
         elif words[0] in sum:
             asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nAM=M-1\n{sum[words[0]]}\n@SP\nM=M+1\n\n")
