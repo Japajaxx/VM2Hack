@@ -1,4 +1,6 @@
-def parse(file_path):
+import sys
+
+def parser(file_path):
 
     def remove_whitespace_and_labels():
         for i in lines:
@@ -18,37 +20,33 @@ def parse(file_path):
     return lines_new
 
 
-def code_writer(lines):
+def code_writer(lines, filename):
 
-    hack_code = []
+    asm_file = open(filename + (".asm"), "a")
+    counter = 0
 
     for i in lines:
+        counter += 1
         words = i.split()
         if words[0] == "push":
             if words[1] == "constant":
-                hack_code.append(f"@{words[2]}")
-                hack_code.append("D=A")
-                hack_code.append("@SP")
-                hack_code.append("A=M")
-                hack_code.append("M=D")
-                hack_code.append("@SP")
-                hack_code.append("M=M+1")
+                asm_file.write(f"@{words[2]}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1")
         elif words[0] == "add":
-            hack_code.append("@SP")
-            hack_code.append("AM=M-1")
-            hack_code.append("D=M")
-            hack_code.append("A=A-1")
-            hack_code.append("M=M+D")
-        
-    return hack_code
+            asm_file.write("@SP\nAM=M-1\nD=M\nA=A-1\nM=D+M")
+        if counter != len(lines):
+            asm_file.write("\n")
+    
+    asm_file.close()
 
 
 def vm_2_hack():
-    lines = parse("SimpleAdd.vm")
-    final_line = code_writer(lines)
-
-    for i in final_line:
-        print(i)
+    if len(sys.argv) != 2:
+        print("Usage: python vm_2_hack.py <filename>")
+        return
+    
+    filename = sys.argv[1]
+    parsed_lines = parser(filename)
+    code_writer(parsed_lines, filename.replace(".vm", ""))
 
 
 vm_2_hack()
