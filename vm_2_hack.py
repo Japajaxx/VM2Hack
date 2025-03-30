@@ -25,14 +25,43 @@ def code_writer(lines, filename):
     asm_file = open(filename + (".asm"), "a")
     counter = 0
 
+    parts1 = {
+        "add": "M=D+M",
+        "sub": "M=M-D",
+        "and": "M=D&M",
+        "or": "M=D|M",
+    }
+
+    parts2 = {
+        "neg": "M=-M",
+        "not": "M=!M",
+    }
+
+    parts3 = {
+        "eq": "D;JEQ\n",
+        "gt": "D;JGT\n",
+        "lt": "D;JLT\n",
+    }
+
+    parts4 = {
+        "this": "@THIS\n",
+        "that": "@THAT\n",
+        "argument": "@ARG\n",
+        "local": "@LCL\n",
+        "temp": "@5\n",
+        "pointer": "@3\n",
+    }
+
     for i in lines:
         counter += 1
         words = i.split()
         if words[0] == "push":
             if words[1] == "constant":
                 asm_file.write(f"@{words[2]}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1")
-        elif words[0] == "add":
-            asm_file.write("@SP\nAM=M-1\nD=M\nA=A-1\nM=D+M")
+        elif words[0] in parts1:
+            asm_file.write("@SP\nAM=M-1\nD=M\nA=A-1\n" + parts1[words[0]])
+        elif words[0] in parts2:
+            asm_file.write("@SP\nA=M-1\n" + parts1[words[0]])
         if counter != len(lines):
             asm_file.write("\n")
     
