@@ -23,27 +23,29 @@ def parser(file_path):
 def code_writer(lines, filename):
 
     asm_file = open(filename + (".asm"), "a")
-    counter = 0
 
-    parts1 = {
+    sum = {
         "add": "M=D+M",
         "sub": "M=M-D",
+    }
+
+    com = {
         "and": "M=D&M",
         "or": "M=D|M",
     }
 
-    parts2 = {
+    neg = {
         "neg": "M=-M",
         "not": "M=!M",
     }
 
-    parts3 = {
-        "eq": "D;JEQ\n",
-        "gt": "D;JGT\n",
-        "lt": "D;JLT\n",
+    j = {
+        "eq": "D;JEQ",
+        "gt": "D;JGT",
+        "lt": "D;JLT",
     }
 
-    parts4 = {
+    parts5 = {
         "this": "@THIS\n",
         "that": "@THAT\n",
         "argument": "@ARG\n",
@@ -52,18 +54,26 @@ def code_writer(lines, filename):
         "pointer": "@3\n",
     }
 
+    part3_label = -1
+
     for i in lines:
-        counter += 1
         words = i.split()
         if words[0] == "push":
             if words[1] == "constant":
-                asm_file.write(f"@{words[2]}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1")
-        elif words[0] in parts1:
-            asm_file.write("@SP\nAM=M-1\nD=M\nA=A-1\n" + parts1[words[0]])
-        elif words[0] in parts2:
-            asm_file.write("@SP\nA=M-1\n" + parts1[words[0]])
-        if counter != len(lines):
-            asm_file.write("\n")
+                asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n@{words[2]}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n\n")
+
+        elif words[0] in sum:
+            asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nAM=M-1\n{sum[words[0]]}\n@SP\nM=M+1\n\n")
+
+        elif words[0] in com:
+            asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nA=M-1\n{com[words[0]]}\n\n")
+
+        elif words[0] in neg:
+            asm_file.write(f"// {words[0]}\n@SP\nA=M-1\n{neg[words[0]]}\n")
+
+        elif words[0] in j:
+            part3_label += 1
+            asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nA=M-1\nD=M-D\nM=-1\n@{words[0]}_True{part3_label}\n{j[words[0]]}\n@SP\nA=M-1\nM=0\n({words[0]}_True{part3_label})\n\n")
     
     asm_file.close()
 
