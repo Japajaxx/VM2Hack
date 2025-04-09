@@ -104,6 +104,9 @@ def code_writer(lines, filename):
         elif words[0] == "label":
             asm_file.write(f"// label {words[1]}\n({words[1]})\n\n")
 
+        elif words[0] == "goto":
+            asm_file.write(f"// goto {words[1]}\n@{words[1]}\nD;JMP\n\n")
+
         elif words[0] == "if-goto":
             asm_file.write(f"// if-goto {words[1]}\n@SP\nAM=M-1\nD=M\n@{words[1]}\nD;JNE\n\n")
     
