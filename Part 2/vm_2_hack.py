@@ -73,19 +73,19 @@ def code_writer(lines, filename):
             asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n")
             if words[1] == "static" or words[1] == "constant":
                 if words[1] == "static":
-                        asm_file.write(f"@Static_{words[2]}\nD=M\n")
+                        asm_file.write(f"@Static_{words[2]}\nD=M\n\n")
                 elif words[1] == "constant":
                     asm_file.write(f"@{words[2]}\nD=A\n")
                 asm_file.write("@SP\nA=M\nM=D\n@SP\nM=M+1\n\n")
             elif words[1] in push_statements:
-                asm_file.write(f"@{words[2]}\nD=A\n{push_statements[words[1]]}\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+                asm_file.write(f"@{words[2]}\nD=A\n{push_statements[words[1]]}\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n\n")
 
         elif words[0] == "pop":
             asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n")
             if words[1] == "static":
                 asm_file.write(f"@SP\nAM=M-1\nD=M\n@Static_{words[2]}\nM=D\n\n")
             elif words[1] in pop_statements:
-                asm_file.write(f"@{words[2]}\nD=A\n{pop_statements[words[1]]}\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n")
+                asm_file.write(f"@{words[2]}\nD=A\n{pop_statements[words[1]]}\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n\n")
             
 
         elif words[0] in sum:
@@ -95,11 +95,17 @@ def code_writer(lines, filename):
             asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nA=M-1\n{com[words[0]]}\n\n")
 
         elif words[0] in neg:
-            asm_file.write(f"// {words[0]}\n@SP\nA=M-1\n{neg[words[0]]}\n")
+            asm_file.write(f"// {words[0]}\n@SP\nA=M-1\n{neg[words[0]]}\n\n")
 
         elif words[0] in j:
             j_counter += 1
             asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nA=M-1\nD=M-D\nM=-1\n@{words[0]}_True{j_counter}\n{j[words[0]]}\n@SP\nA=M-1\nM=0\n({words[0]}_True{j_counter})\n\n")
+
+        elif words[0] == "label":
+            asm_file.write(f"// label {words[1]}\n({words[1]})\n\n")
+
+        elif words[0] == "if-goto":
+            asm_file.write(f"// if-goto {words[1]}\n@SP\nAM=M-1\nD=M\n@{words[1]}\nD;JNE\n\n")
     
     asm_file.close()
 
