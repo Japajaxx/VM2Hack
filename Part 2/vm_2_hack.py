@@ -23,12 +23,8 @@ def parser(file_path):
     return lines_new
 
 
-def code_writer(lines, filename, vm_file_name, is_first_file=False):
+def code_writer(lines, filename, vm_file_name):
     asm_file = open(filename + (".asm"), "a")
-
-    # Write bootstrap code if this is the first file
-    if is_first_file:
-        vm_file_name = ""
 
     sum = {
         "add": "M=D+M",
@@ -78,7 +74,7 @@ def code_writer(lines, filename, vm_file_name, is_first_file=False):
             asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n")
             if words[1] == "static" or words[1] == "constant":
                 if words[1] == "static":
-                        asm_file.write(f"@Static_{words[2]}\nD=M\n\n")
+                        asm_file.write(f"@{vm_file_name}Static_{words[2]}\nD=M\n\n")
                 elif words[1] == "constant":
                     asm_file.write(f"@{words[2]}\nD=A\n")
                 asm_file.write("@SP\nAM=M+1\nA=A-1\nM=D\n\n")
@@ -88,7 +84,7 @@ def code_writer(lines, filename, vm_file_name, is_first_file=False):
         elif words[0] == "pop":
             asm_file.write(f"// {words[0]} {words[1]} {words[2]}\n")
             if words[1] == "static":
-                asm_file.write(f"@SP\nAM=M-1\nD=M\n@Static_{words[2]}\nM=D\n\n")
+                asm_file.write(f"@SP\nAM=M-1\nD=M\n@{vm_file_name}Static_{words[2]}\nM=D\n\n")
             elif words[1] in pop_statements:
                 asm_file.write(f"@{words[2]}\nD=A\n{pop_statements[words[1]]}\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n\n")
             
@@ -142,7 +138,7 @@ def vm_2_hack():
     if os.path.isfile(input_path) and input_path.endswith(".vm"):
         filename = os.path.basename(input_path).replace(".vm", "")
         parsed_lines = parser(input_path)
-        code_writer(parsed_lines, filename, is_first_file=True, vm_file_name="")
+        code_writer(parsed_lines, filename, vm_file_name="")
     elif os.path.isdir(input_path):
         folder_name = os.path.basename(os.path.normpath(input_path))
         output_file = os.path.join(os.path.dirname(__file__), f"{folder_name}.asm")
@@ -150,13 +146,11 @@ def vm_2_hack():
         write_bootstrap(asm_file)
         asm_file.close()
         
-        first_file = True
         for vm_file in os.listdir(input_path):
             if vm_file.endswith(".vm"):
                 vm_file_path = os.path.join(input_path, vm_file)
                 parsed_lines = parser(vm_file_path)
-                code_writer(parsed_lines, output_file.replace(".asm", ""), is_first_file=first_file, vm_file_name=vm_file)
-                first_file = False
+                code_writer(parsed_lines, output_file.replace(".asm", ""), vm_file_name=vm_file)
     else:
         print("Invalid input. Provide a .vm file or a folder containing .vm files.")
 
