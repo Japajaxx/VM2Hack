@@ -1,7 +1,7 @@
 # call with "python vm_2_hack.py <filename>.vm or <folder>"
 
 import sys
-import os  # Add import for handling directories
+import os
 
 def parser(file_path):
 
@@ -23,9 +23,12 @@ def parser(file_path):
     return lines_new
 
 
-def code_writer(lines, filename):
-
+def code_writer(lines, filename, vm_file_name, is_first_file=False):
     asm_file = open(filename + (".asm"), "a")
+
+    # Write bootstrap code if this is the first file
+    if is_first_file:
+        vm_file_name = ""
 
     sum = {
         "add": "M=D+M",
@@ -51,8 +54,8 @@ def code_writer(lines, filename):
     push_statements = {
         "this": "@THIS\nA=D+M",
         "that": "@THAT\nA=D+M",
-        "argument": "@ARG\nA=D+M",
-        "local": "@LCL\nA=D+M",
+        "argument": "@ARG\nA=M\nA=D+A",
+        "local": "@LCL\nA=M\nA=D+A",
         "temp": "@5\nA=D+A",
         "pointer": "@3\nA=D+A",
     }
@@ -61,13 +64,13 @@ def code_writer(lines, filename):
         "this": "@THIS\nD=D+M",
         "that": "@THAT\nD=D+M",
         "argument": "@ARG\nD=D+M",
-        "local": "@LCL\nD=D+A",
+        "local": "@LCL\nA=M\nD=D+A",
         "temp": "@5\nD=D+A",
         "pointer": "@3\nD=D+A",
     }
 
     j_counter = -1
-    call_counter = 0  # Counter to generate unique return labels
+    call_counter = -1
 
     for i in lines:
         words = i.split()
@@ -78,7 +81,7 @@ def code_writer(lines, filename):
                         asm_file.write(f"@Static_{words[2]}\nD=M\n\n")
                 elif words[1] == "constant":
                     asm_file.write(f"@{words[2]}\nD=A\n")
-                asm_file.write("@SP\nA=M\nM=D\n@SP\nM=M+1\n\n")
+                asm_file.write("@SP\nAM=M+1\nA=A-1\nM=D\n\n")
             elif words[1] in push_statements:
                 asm_file.write(f"@{words[2]}\nD=A\n{push_statements[words[1]]}\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n\n")
 
@@ -91,7 +94,7 @@ def code_writer(lines, filename):
             
 
         elif words[0] in sum:
-            asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nAM=M-1\n{sum[words[0]]}\n@SP\nM=M+1\n\n")
+            asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nA=M-1\n{sum[words[0]]}\n\n")
 
         elif words[0] in com:
             asm_file.write(f"// {words[0]}\n@SP\nAM=M-1\nD=M\n@SP\nA=M-1\n{com[words[0]]}\n\n")
@@ -120,10 +123,13 @@ def code_writer(lines, filename):
             asm_file.write(f"// return\n@LCL\nD=M\n@R13\nM=D\n@5\nA=D-A\nD=M\n@R14\nM=D\n@SP\nAM=M-1\nD=M\n@ARG\nA=M\nM=D\n@ARG\nD=M+1\n@SP\nM=D\n@R13\nAM=M-1\nD=M\n@THAT\nM=D\n@R13\nAM=M-1\nD=M\n@THIS\nM=D\n@R13\nAM=M-1\nD=M\n@ARG\nM=D\n@R13\nAM=M-1\nD=M\n@LCL\nM=D\n@R14\nA=M\n0;JMP\n\n")
         elif words[0] == "call":
             call_counter += 1
-            return_label = f"{words[1]}_return{call_counter}"
-            asm_file.write(f"// call {words[1]} {words[2]}\n@{return_label}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@SP\nD=M\n@5\nD=D-A\n@{words[2]}\nD=D-A\n@ARG\nM=D\n@SP\nD=M\n@LCL\nM=D\n@{words[1]}\n0;JMP\n({return_label})\n")
+            return_label = f"{vm_file_name}.{words[1]}_return{call_counter}"
+            asm_file.write(f"// call {words[1]} {words[2]}\n@{return_label}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@SP\nD=M\n@5\nD=D-A\n@{words[2]}\nD=D-A\n@ARG\nM=D\n@SP\nD=M\n@LCL\nM=D\n@{words[1]}\n0;JMP\n({return_label})\n\n")
     
     asm_file.close()
+
+def write_bootstrap(asm_file):
+    asm_file.write("// Bootstrap code\n@256\nD=A\n@SP\nM=D\n\n// Call Sys.init\n@Sys.init_return\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@SP\nD=M\n@5\nD=D-A\n@0\nD=D-A\n@ARG\nM=D\n@SP\nD=M\n@LCL\nM=D\n@Sys.init\n0;JMP\n(Sys.init_return)\n\n")
 
 
 def vm_2_hack():
@@ -134,22 +140,23 @@ def vm_2_hack():
     input_path = sys.argv[1]
     
     if os.path.isfile(input_path) and input_path.endswith(".vm"):
-        # Single .vm file
         filename = os.path.basename(input_path).replace(".vm", "")
         parsed_lines = parser(input_path)
-        code_writer(parsed_lines, filename)
+        code_writer(parsed_lines, filename, is_first_file=True, vm_file_name="")
     elif os.path.isdir(input_path):
-        # Directory containing .vm files
         folder_name = os.path.basename(os.path.normpath(input_path))
         output_file = os.path.join(os.path.dirname(__file__), f"{folder_name}.asm")
-        asm_file = open(output_file, "w")  # Create/overwrite the output .asm file
+        asm_file = open(output_file, "w")
+        write_bootstrap(asm_file)
         asm_file.close()
         
+        first_file = True
         for vm_file in os.listdir(input_path):
             if vm_file.endswith(".vm"):
                 vm_file_path = os.path.join(input_path, vm_file)
                 parsed_lines = parser(vm_file_path)
-                code_writer(parsed_lines, output_file.replace(".asm", ""))
+                code_writer(parsed_lines, output_file.replace(".asm", ""), is_first_file=first_file, vm_file_name=vm_file)
+                first_file = False
     else:
         print("Invalid input. Provide a .vm file or a folder containing .vm files.")
 
