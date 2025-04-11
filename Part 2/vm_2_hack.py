@@ -121,16 +121,7 @@ def code_writer(lines, filename):
         elif words[0] == "call":
             call_counter += 1
             return_label = f"{words[1]}_return{call_counter}"
-            asm_file.write(f"// call {words[1]} {words[2]}\n")
-            asm_file.write(f"@{return_label}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")  # Push return address
-            asm_file.write(f"@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")  # Push LCL
-            asm_file.write(f"@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")  # Push ARG
-            asm_file.write(f"@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")  # Push THIS
-            asm_file.write(f"@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")  # Push THAT
-            asm_file.write(f"@SP\nD=M\n@5\nD=D-A\n@{words[2]}\nD=D-A\n@ARG\nM=D\n")  # Reposition ARG
-            asm_file.write(f"@SP\nD=M\n@LCL\nM=D\n")  # Reposition LCL
-            asm_file.write(f"@{words[1]}\n0;JMP\n")  # Transfer control
-            asm_file.write(f"({return_label})\n")  # Declare return label
+            asm_file.write(f"// call {words[1]} {words[2]}\n@{return_label}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@SP\nD=M\n@5\nD=D-A\n@{words[2]}\nD=D-A\n@ARG\nM=D\n@SP\nD=M\n@LCL\nM=D\n@{words[1]}\n0;JMP\n({return_label})\n")
     
     asm_file.close()
 
